@@ -1,7 +1,7 @@
 package pdfUtil
 
 import (
-	"bytes"
+	"file/model/pdf"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -11,27 +11,35 @@ import (
 )
 
 // pdfPrintLine 递归打印PDF标签
-func pdfPrintLine(item *model.OutlineItem, buf *bytes.Buffer) {
+func pdfPrintLine(item *model.OutlineItem, labels *[]pdf.Label) {
 	if item.Dest.PageObj == nil {
 		return
 	}
-	buf.WriteString(fmt.Sprintf("\t%v %v\n", item.Title, item.Dest.Page+1))
+	label := pdf.Label{
+		LabelName:    item.Title,
+		LabelPosPage: int(item.Dest.Page) + 1,
+	}
+	*labels = append(*labels, label) // 直接向切片中添加新元素
 	for _, childItem := range item.Items() {
-		pdfPrintLine(childItem, buf)
+		pdfPrintLine(childItem, labels)
 	}
 }
 
 // guoLvPDF 读取PDF文件，提取标签和页数
-func GuoLvPDF(root string, content chan string, wg *sync.WaitGroup, sem chan struct{}) {
+func GuoLvPDF(root string, content chan pdf.Record, wg *sync.WaitGroup, sem chan struct{}) {
 	defer wg.Done()
 
 	// 控制并发数量
 	sem <- struct{}{}
 	defer func() { <-sem }()
 
-	var buf bytes.Buffer
+	var recore pdf.Record
 	defer func() {
-		content <- buf.String()
+		// 过滤掉无效内容
+		if len(recore.FileName) == 0 {
+			return
+		}
+		content <- recore
 	}()
 
 	f, err := os.Open(root)
@@ -55,7 +63,8 @@ func GuoLvPDF(root string, content chan string, wg *sync.WaitGroup, sem chan str
 	}
 
 	// 写入文件名和页数
-	fmt.Fprintf(&buf, "%v %v\n", filepath.Base(root), pageSize)
+	recore.FileName = filepath.Base(root)
+	recore.PageCounts = pageSize
 
 	// 判断是否有无标签
 	if rootNode := pdfReader.GetOutlineTree(); rootNode == nil {
@@ -71,6 +80,6 @@ func GuoLvPDF(root string, content chan string, wg *sync.WaitGroup, sem chan str
 
 	// 递归打印标签
 	for _, item := range lines.Items() {
-		pdfPrintLine(item, &buf)
+		pdfPrintLine(item, &recore.Labels)
 	}
 }
