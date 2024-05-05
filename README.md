@@ -1,6 +1,6 @@
 # pdf_outline
 # 初始化项目 
-> go mod init 
+> go mod init file
 > 
 > go mod tidy
 > 
