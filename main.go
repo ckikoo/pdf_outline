@@ -102,7 +102,7 @@ func main() {
 	ch := make(chan string)       // 存储文件路径的缓冲通道
 	content := make(chan string)  // 存储文件内容的缓冲通道
 	done := make(chan struct{})   // 用于通知主函数内容已经写入完毕的通道
-	sem := make(chan struct{}, 4) // 控制并发数量的信号量，限制最多同时有4个协程
+	sem := make(chan struct{}, 4) // 控制并发数量的信号量，限制最多同时有n个协程
 	wg := &sync.WaitGroup{}       // 用于等待所有协程完成的 WaitGroup
 
 	go fileUtil.TraverseDirectories(rootDir, ch) // 并发遍历目录
