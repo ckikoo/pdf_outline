@@ -5,7 +5,8 @@
 > go mod tidy
 > 
 # 编译项目
-## linux 下编译window
+## linux 下编译window  
+> 该编译存在问题
 > CC=x86_64-w64-mingw64-gcc CGO_ENABLED=1 GOOS=windows GOARCH=amd64 go build -o output.exe main.go
 ## window 编译window
 > go build -o output.exe main.go
